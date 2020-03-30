@@ -26,7 +26,6 @@
   (let ((regexps '("^!doctype( .*)*" ;; <!DOCTYPE>
                    "^meta( .*)*"     ;; <meta>
                    "^script( .*)*"   ;; <script>
-                   "^!--.*--$"       ;; <!-- COMMENT -->
                    "^br( .*)*"       ;; <br>
                    "^li( .*)*"       ;; <li>
                    "^img( .*)*"      ;; <img>
