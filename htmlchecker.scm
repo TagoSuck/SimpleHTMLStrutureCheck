@@ -8,30 +8,20 @@
 (define (tag-closing-of closing)
   (substring closing 1 (string-length closing)))
 (define (string->tag s) (string-append "<" s ">"))
-(define (string-empty? s) (zero? (string-length s)))
-; (define (comment? s)
-;   (if (string? (rxmatch->string #/<!--(.*)-->/ s)) #t #f))
-(define (match-tag regexp tag)
-  (rxmatch->string (string->regexp regexp :case-fold #t) tag))
-
-(define (any-single-tag? tag single-tag-regexps matched)
-  (cond ((null? single-tag-regexps) (pair? matched))
-        (else
-          (let ((match (match-tag (car single-tag-regexps) tag)))
-                (if (not (string? match))
-                  (any-single-tag? tag (cdr single-tag-regexps) matched)
-                  (cons match matched))))))
 
 (define (single-tag? tag)
-  (let ((regexps '("^!doctype( .*)*" ;; <!DOCTYPE>
-                   "^meta( .*)*"     ;; <meta>
-                   "^script( .*)*"   ;; <script>
-                   "^br( .*)*"       ;; <br>
-                   "^li( .*)*"       ;; <li>
-                   "^img( .*)*"      ;; <img>
-                   "^p( .*)*"        ;; <p>
-                   )))
-    (any-single-tag? tag regexps '())))
+  (pair? (filter
+           (lambda (s) (string-ci=? tag s))
+           '(
+             "!doctype"
+             "meta"
+             "script"
+             "link"
+             "br"
+             "li"
+             "img"
+             "p"
+             ))))
 
 (define (read-file file-name)
   (let ((p (open-input-file file-name)))
