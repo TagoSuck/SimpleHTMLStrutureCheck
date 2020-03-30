@@ -2,12 +2,15 @@
 (define (begin-of-tag? c) (char=? c #\<))
 (define (end-of-tag?   c) (char=? c #\>))
 (define (tag-closing?  c) (char=? c #\/))
+(define (white-space?  c) (char=? c #\ ))
 (define (car-of-tag tag) (car (reverse tag)))
 (define (list->tag src) (list->string (reverse src)))
 (define (tag-closing-of closing)
   (substring closing 1 (string-length closing)))
 (define (string->tag s) (string-append "<" s ">"))
 (define (string-empty? s) (zero? (string-length s)))
+; (define (comment? s)
+;   (if (string? (rxmatch->string #/<!--(.*)-->/ s)) #t #f))
 (define (match-tag regexp tag)
   (rxmatch->string (string->regexp regexp :case-fold #t) tag))
 
@@ -22,6 +25,7 @@
 (define (single-tag? tag)
   (let ((regexps '("^!doctype( .*)*" ;; <!DOCTYPE>
                    "^meta( .*)*"     ;; <meta>
+                   "^script( .*)*"   ;; <script>
                    "^!--.*--$"       ;; <!-- COMMENT -->
                    "^br( .*)*"       ;; <br>
                    "^li( .*)*"       ;; <li>
@@ -53,19 +57,24 @@
   (print-tag tags))
 
 (define (tag-name src tags tag)
-  (cond ((end-of-tag? (car src))
+  (cond ((null? src) #f)
+        ((string=? (list->tag tag) "!--") (tag-check (cdr src) tags))
+        ((or (end-of-tag? (car src)) (white-space? (car src)))
          (if (tag-closing? (car-of-tag tag))
-           (cond ((and (pair? tags)
-                       (string=? (tag-closing-of (list->tag tag)) (car tags)))
+           (cond ((null? tags) (put-error-msg tags tag))
+                 ((string=? (tag-closing-of (list->tag tag)) (car tags))
                   (tag-check (cdr src) (cdr tags)))
+                 ((single-tag? (car tags)) (tag-name src (cdr tags) tag))
                  (else (put-error-msg tags tag)))
-           (if (single-tag? (list->tag tag))
-             (tag-check (cdr src) tags)
-             (tag-check (cdr src) (cons (list->tag tag) tags)))))
+           (tag-check (cdr src) (cons (list->tag tag) tags))))
         (else (tag-name (cdr src) tags (cons (car src) tag)))))
 
 (define (tag-check src tags)
-  (cond ((null? src) (if (null? tags) (print "ok") (put-error-msg tags '())))
+  (cond ((null? src) (if (null? tags)
+                       (print "ok")
+                       (if (single-tag? (car tags))
+                         (tag-check src (cdr tags))
+                         (put-error-msg tags '()))))
         ((begin-of-tag? (car src)) (tag-name (cdr src) tags '()))
         (else (tag-check (cdr src) tags))))
 
