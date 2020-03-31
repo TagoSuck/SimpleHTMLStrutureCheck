@@ -20,6 +20,9 @@
              "li"
              "img"
              "p"
+             "dt"
+             "dd"
+             "hr"
              ))))
 
 (define (read-file file-name)
